@@ -42,7 +42,7 @@ int CellGrid_eval_cell_int(Cell *c);
 
 float CellGrid_eval_cell_float(Cell *c);
 
-Cell_eval CellGrid_eval_cell_expr(Cell *c);
+Cell_eval CellGrid_eval_cell_expr(Cell *c, CellGrid *cg);
 
 bool CellGrid_cell_is_expr(Cell *c);
 
@@ -50,6 +50,7 @@ bool CellGrid_cell_is_float(Cell *c);
 
 bool CellGrid_cell_is_int(Cell *c);
 
+Cell *CellGrid_search_by_grid_pos(const char *pos, CellGrid *cg);
 
 /* Utility functions */
 

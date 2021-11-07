@@ -11,8 +11,14 @@ void CellGrid_print(CellGrid *cg)
 	size_t j;
 	for (i = 0; i < cg->num_rows; i++) {
 		for (j = 0; j < cg->num_cols; j++) {
+			if (cg->cells[i][j].cell_type == EXPR) {
+
+				printf("%s: %d ", cg->cells[i][j].grid_pos, 
+						cg->cells[i][j].cell_eval.i);
+			} else {
 			printf("%s: %s ", cg->cells[i][j].grid_pos, 
 					cg->cells[i][j].contents);
+			}
 		}	
 		printf("\n");
 	}
@@ -25,7 +31,7 @@ char *getfield(char *line, int num, char delim)
 	char *token;
 	char *copy = (char *)malloc(strlen(line) + 1);
 	strcpy(copy, line);
-	
+
 	char temp_delim1[] = {delim, '\0'};
 	char temp_delim2[] = {delim, '\n', '\0'};
 
@@ -75,13 +81,14 @@ CellGrid *CellGrid_read_from_csv(const char *file_path, char delim)
 	while(fgets(line, STREAM_BUFFER_MAX, stream) != NULL) {
 		char *temp_line = strdup(line);
 		cols = get_num_of_fields(temp_line, delim);
+		cg->num_cols = cols;
 		size_t i;
 		Cell *cur_cell; 
 		for (i = 0; i < cols; i++) {
-				
+
 			cur_cell = &cg->cells[rows][i];
 			cur_cell->contents = getfield(temp_line, i, delim);
-			
+
 			// TODO: Set cell position on grid (This needs to be changed)
 			char pos[3];
 			pos[0] = COL_LETTERS[i];
@@ -101,14 +108,14 @@ CellGrid *CellGrid_read_from_csv(const char *file_path, char delim)
 				cur_cell->cell_eval.f = CellGrid_eval_cell_float(cur_cell);
 			} else if (CellGrid_cell_is_expr(cur_cell)) {
 				cur_cell->cell_type = EXPR;
+				cur_cell->cell_eval = CellGrid_eval_cell_expr(cur_cell, cg);
 			}
 		}
 		rows++;
+		cg->num_rows = rows;
 		free(temp_line);
 	}
 	// printf("rows: %d  cols: %d\n", rows, cols);	
-	cg->num_rows = rows;
-	cg->num_cols = cols;
 
 	return cg;	
 }
@@ -149,18 +156,33 @@ bool CellGrid_cell_is_expr(Cell *c)
 
 void remove_spaces (char* str_trimmed, const char* str_untrimmed)
 {
-  while (*str_untrimmed != '\0')
-  {
-    if(!isspace(*str_untrimmed))
-    {
-      *str_trimmed = *str_untrimmed;
-      str_trimmed++;
-    }
-    str_untrimmed++;
-  }
+	while (*str_untrimmed != '\0')
+	{
+		if(!isspace(*str_untrimmed))
+		{
+			*str_trimmed = *str_untrimmed;
+			str_trimmed++;
+		}
+		str_untrimmed++;
+	}
 
-  *str_trimmed = '\0';
+	*str_trimmed = '\0';
 
+}
+
+Cell *CellGrid_search_by_grid_pos(const char *pos, CellGrid *cg)
+{
+	int i;
+	int j;
+	for (i = 0; i < cg->num_rows; i++) {
+		for (j = 0; j < cg->num_cols; j++) {
+			if (strcmp(cg->cells[i][j].grid_pos, pos) == 0)
+				return &cg->cells[i][j];
+		}
+
+	}
+
+	return NULL;
 }
 
 
@@ -168,11 +190,49 @@ void remove_spaces (char* str_trimmed, const char* str_untrimmed)
  * TODO: Evaluate expression
  * Simplitciy can only handle two operands
  */
-Cell_eval CellGrid_eval_cell_expr(Cell *c)
+Cell_eval CellGrid_eval_cell_expr(Cell *c, CellGrid *cg)
 {
 	char *trimmed = malloc(strlen(c->contents) + 1);
 	remove_spaces(trimmed, c->contents);
-	printf("expr: %s\n", trimmed);
+
+	// Get the grid positions from the expr
+	// This is not good (fix: use a better method)
+	char operand1[3], operand2[3];
+	char *begin = trimmed;
+	char *operator = strchr(trimmed, '+');
+	char *temp = operand1;
+	while(begin != operator) {
+		*temp = *begin;
+		begin++;
+		temp++;
+	}
+	*temp = '\0';
+
+
+	temp = operand2;
+	char *operand2_start = operator+1;
+	strcpy(operand2, operand2_start);
+
+	// printf("1: %s 2: %s\n", operand1, operand2);
+
+	// Get corresponding cells for the grid pos
+	Cell *c1 = CellGrid_search_by_grid_pos(operand1, cg);
+	Cell *c2 = CellGrid_search_by_grid_pos(operand2, cg);
+	Cell_eval ce;
+
+	if (c1->cell_type == INT || c2->cell_type == INT) {
+		ce.i = c1->cell_eval.i + c2->cell_eval.i;
+		return ce;
+	} else {
+		ce.f = c1->cell_eval.f + c2->cell_eval.f;
+		return ce;
+	}
+
+	ce.i = 0;
+	return ce;
+
+
+	// printf("expr: %s\n", trimmed);
 }
 
 float CellGrid_eval_cell_float(Cell *c)
