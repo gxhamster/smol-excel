@@ -9,7 +9,9 @@ enum CellTypes {
 	INT,
 	FLOAT,
 	STRING,
-	EXPR
+	EXPR,
+	EXPR_INT,
+	EXPR_FLOAT
 };
 
 
@@ -28,7 +30,7 @@ typedef struct {
 	size_t num_cols;
 } CellGrid;
 
-/* 
+/*
  * When A1 + B2 is eval it could either be a float or an integer
  * This union will hold the eval value
  */
@@ -37,6 +39,8 @@ typedef struct {
 void CellGrid_print(CellGrid *cg);
 #define STREAM_BUFFER_MAX 1024
 CellGrid *CellGrid_read_from_csv(const char *file_path, char delim);
+CellGrid *CellGrid_parse_expr(CellGrid *cg);
+CellGrid *CellGrid_parse_numbers(CellGrid *cg);
 
 int CellGrid_eval_cell_int(Cell *c);
 
@@ -60,9 +64,3 @@ char *getfield(char *line, int num, char delim);
 int get_num_of_fields(char *line, char delim);
 
 void remove_spaces (char* str_trimmed, const char* str_untrimmed);
-
-
-
-
-
-

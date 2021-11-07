@@ -11,15 +11,17 @@ void CellGrid_print(CellGrid *cg)
 	size_t j;
 	for (i = 0; i < cg->num_rows; i++) {
 		for (j = 0; j < cg->num_cols; j++) {
-			if (cg->cells[i][j].cell_type == EXPR) {
-
-				printf("%s: %d ", cg->cells[i][j].grid_pos, 
+			if (cg->cells[i][j].cell_type == EXPR_INT) {
+				printf("%s: %d ", cg->cells[i][j].grid_pos,
 						cg->cells[i][j].cell_eval.i);
+			} else if (cg->cells[i][j].cell_type == EXPR_FLOAT) {
+				printf("%s: %f ", cg->cells[i][j].grid_pos,
+						cg->cells[i][j].cell_eval.f);
 			} else {
-			printf("%s: %s ", cg->cells[i][j].grid_pos, 
-					cg->cells[i][j].contents);
+				printf("%s: %s ", cg->cells[i][j].grid_pos,
+						cg->cells[i][j].contents);
 			}
-		}	
+		}
 		printf("\n");
 	}
 }
@@ -65,6 +67,57 @@ int get_num_of_fields(char *line, char delim)
 	return count;
 }
 
+
+// Call this function before parsing expr
+CellGrid *CellGrid_parse_numbers(CellGrid *cg)
+{
+
+	int i;
+	int j;
+	Cell *cur_cell;
+	for (i = 0; i < cg->num_rows; i++) {
+		for (j = 0; j < cg->num_cols; j++) {
+			cur_cell = &cg->cells[i][j];
+			// Set evaluated value of each cell
+			// Also set the type
+			if (CellGrid_cell_is_int(cur_cell)) {
+				cur_cell->cell_type = INT;
+				cur_cell->cell_eval.i = CellGrid_eval_cell_int(cur_cell);
+			} else if (CellGrid_cell_is_float(cur_cell)) {
+				cur_cell->cell_type = FLOAT;
+				cur_cell->cell_eval.f = CellGrid_eval_cell_float(cur_cell);
+			}
+		}
+
+	}
+
+	return cg;
+
+}
+
+// parses the expr in the grid
+// call after calling CellGrid_parse_numbers()
+CellGrid *CellGrid_parse_expr(CellGrid *cg)
+{
+	int i;
+	int j;
+	Cell *cur_cell;
+
+	for (i = 0; i < cg->num_rows; i++) {
+		for (j = 0; j < cg->num_cols; j++) {
+			cur_cell = &cg->cells[i][j];
+			if (CellGrid_cell_is_expr(cur_cell)) {
+				cur_cell->cell_eval = CellGrid_eval_cell_expr(cur_cell, cg);
+			}
+		}
+
+	}
+
+	return cg;
+
+}
+
+// only parses the string content
 CellGrid *CellGrid_read_from_csv(const char *file_path, char delim)
 {
 	char *COL_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -83,7 +136,7 @@ CellGrid *CellGrid_read_from_csv(const char *file_path, char delim)
 		cols = get_num_of_fields(temp_line, delim);
 		cg->num_cols = cols;
 		size_t i;
-		Cell *cur_cell; 
+		Cell *cur_cell;
 		for (i = 0; i < cols; i++) {
 
 			cur_cell = &cg->cells[rows][i];
@@ -96,28 +149,14 @@ CellGrid *CellGrid_read_from_csv(const char *file_path, char delim)
 			pos[2] = '\0';
 
 			cur_cell->grid_pos = strdup(pos);
-			// printf("Grid pos: %s\n", cur_cell->grid_pos);
-
-			// Set evaluated value of each cell
-			// Also set the type
-			if (CellGrid_cell_is_int(cur_cell)) {
-				cur_cell->cell_type = INT;
-				cur_cell->cell_eval.i = CellGrid_eval_cell_int(cur_cell);
-			} else if (CellGrid_cell_is_float(cur_cell)) {
-				cur_cell->cell_type = FLOAT;
-				cur_cell->cell_eval.f = CellGrid_eval_cell_float(cur_cell);
-			} else if (CellGrid_cell_is_expr(cur_cell)) {
-				cur_cell->cell_type = EXPR;
-				cur_cell->cell_eval = CellGrid_eval_cell_expr(cur_cell, cg);
-			}
 		}
 		rows++;
 		cg->num_rows = rows;
 		free(temp_line);
 	}
-	// printf("rows: %d  cols: %d\n", rows, cols);	
+	// printf("rows: %d  cols: %d\n", rows, cols);
 
-	return cg;	
+	return cg;
 }
 
 bool CellGrid_cell_is_float(Cell *c)
@@ -154,7 +193,7 @@ bool CellGrid_cell_is_expr(Cell *c)
 	return false;
 }
 
-void remove_spaces (char* str_trimmed, const char* str_untrimmed)
+void remove_spaces(char* str_trimmed, const char* str_untrimmed)
 {
 	while (*str_untrimmed != '\0')
 	{
@@ -186,7 +225,7 @@ Cell *CellGrid_search_by_grid_pos(const char *pos, CellGrid *cg)
 }
 
 
-/* 
+/*
  * TODO: Evaluate expression
  * Simplitciy can only handle two operands
  */
@@ -220,15 +259,34 @@ Cell_eval CellGrid_eval_cell_expr(Cell *c, CellGrid *cg)
 	Cell *c2 = CellGrid_search_by_grid_pos(operand2, cg);
 	Cell_eval ce;
 
-	if (c1->cell_type == INT || c2->cell_type == INT) {
+	enum CellTypes type1;
+	enum CellTypes type2;
+	type1 = c1->cell_type;
+	type2 = c2->cell_type;
+
+	// This is bad
+	if (type1 == INT && type2 == INT) {
+		c->cell_type = EXPR_INT;
 		ce.i = c1->cell_eval.i + c2->cell_eval.i;
 		return ce;
+	} else if (type1 == FLOAT && type2 == INT) {
+		c->cell_type = EXPR_FLOAT;
+		ce.f = c1->cell_eval.f + c2->cell_eval.i;
+		return ce;
+	} else if (type1 == INT && type2 == FLOAT) {
+		c->cell_type = EXPR_FLOAT;
+		ce.f = c1->cell_eval.i + c2->cell_eval.f;
+		return ce;
 	} else {
+		c->cell_type = EXPR_FLOAT;
 		ce.f = c1->cell_eval.f + c2->cell_eval.f;
 		return ce;
 	}
 
+
+	// Maybe should remove this
 	ce.i = 0;
+	ce.f = 0;
 	return ce;
 
 
@@ -242,16 +300,5 @@ float CellGrid_eval_cell_float(Cell *c)
 
 int CellGrid_eval_cell_int(Cell *c)
 {
-	return atoi(c->contents);		
+	return atoi(c->contents);
 }
-
-
-
-
-
-
-
-
-
-
-
