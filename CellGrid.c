@@ -15,7 +15,7 @@ void CellGrid_print(CellGrid *cg)
 				printf("%s: %d ", cg->cells[i][j].grid_pos,
 						cg->cells[i][j].cell_eval.i);
 			} else if (cg->cells[i][j].cell_type == EXPR_FLOAT) {
-				printf("%s: %f ", cg->cells[i][j].grid_pos,
+				printf("%s: %.2f ", cg->cells[i][j].grid_pos,
 						cg->cells[i][j].cell_eval.f);
 			} else {
 				printf("%s: %s ", cg->cells[i][j].grid_pos,
@@ -72,8 +72,8 @@ int get_num_of_fields(char *line, char delim)
 CellGrid *CellGrid_parse_numbers(CellGrid *cg)
 {
 
-	int i;
-	int j;
+	size_t i;
+	size_t j;
 	Cell *cur_cell;
 	for (i = 0; i < cg->num_rows; i++) {
 		for (j = 0; j < cg->num_cols; j++) {
@@ -88,19 +88,17 @@ CellGrid *CellGrid_parse_numbers(CellGrid *cg)
 				cur_cell->cell_eval.f = CellGrid_eval_cell_float(cur_cell);
 			}
 		}
-
 	}
 
 	return cg;
-
 }
 
 // parses the expr in the grid
 // call after calling CellGrid_parse_numbers()
 CellGrid *CellGrid_parse_expr(CellGrid *cg)
 {
-	int i;
-	int j;
+	size_t i;
+	size_t j;
 	Cell *cur_cell;
 
 	for (i = 0; i < cg->num_rows; i++) {
@@ -110,11 +108,9 @@ CellGrid *CellGrid_parse_expr(CellGrid *cg)
 				cur_cell->cell_eval = CellGrid_eval_cell_expr(cur_cell, cg);
 			}
 		}
-
 	}
 
 	return cg;
-
 }
 
 // only parses the string content
@@ -138,7 +134,6 @@ CellGrid *CellGrid_read_from_csv(const char *file_path, char delim)
 		size_t i;
 		Cell *cur_cell;
 		for (i = 0; i < cols; i++) {
-
 			cur_cell = &cg->cells[rows][i];
 			cur_cell->contents = getfield(temp_line, i, delim);
 
@@ -211,14 +206,13 @@ void remove_spaces(char* str_trimmed, const char* str_untrimmed)
 
 Cell *CellGrid_search_by_grid_pos(const char *pos, CellGrid *cg)
 {
-	int i;
-	int j;
+	size_t i;
+	size_t j;
 	for (i = 0; i < cg->num_rows; i++) {
 		for (j = 0; j < cg->num_cols; j++) {
 			if (strcmp(cg->cells[i][j].grid_pos, pos) == 0)
 				return &cg->cells[i][j];
 		}
-
 	}
 
 	return NULL;
@@ -226,7 +220,6 @@ Cell *CellGrid_search_by_grid_pos(const char *pos, CellGrid *cg)
 
 
 /*
- * TODO: Evaluate expression
  * Simplitciy can only handle two operands
  */
 Cell_eval CellGrid_eval_cell_expr(Cell *c, CellGrid *cg)
@@ -264,6 +257,9 @@ Cell_eval CellGrid_eval_cell_expr(Cell *c, CellGrid *cg)
 	type1 = c1->cell_type;
 	type2 = c2->cell_type;
 
+	// TODO: Handle deifferent operators
+	// TODO: Handle multiple operands and operators
+
 	// This is bad
 	if (type1 == INT && type2 == INT) {
 		c->cell_type = EXPR_INT;
@@ -288,9 +284,6 @@ Cell_eval CellGrid_eval_cell_expr(Cell *c, CellGrid *cg)
 	ce.i = 0;
 	ce.f = 0;
 	return ce;
-
-
-	// printf("expr: %s\n", trimmed);
 }
 
 float CellGrid_eval_cell_float(Cell *c)

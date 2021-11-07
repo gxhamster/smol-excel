@@ -11,11 +11,13 @@ int main(void)
 
 	CellGrid_print(cg);
 
-	// Cell *c = CellGrid_search_by_grid_pos("C3", cg);
-	// CellGrid_eval_cell_expr(c, cg);
-
-	Cell c = cg->cells[1][1];
-	printf("num: %f\n", CellGrid_eval_cell_expr(&c, cg).f);
+	/*
+	1,2,5.23
+	3,C1+B1,2.0
+	10,2,A1+B1
+ 	*/
+	// Cell c = cg->cells[1][1];
+	// printf("num: %f\n", CellGrid_eval_cell_expr(&c, cg).f);
 
 	return 0;
 }
