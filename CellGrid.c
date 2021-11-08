@@ -113,6 +113,58 @@ CellGrid *CellGrid_parse_expr(CellGrid *cg)
 	return cg;
 }
 
+// function definition of the revstr()  
+void reverse_str(char *str1)  
+{  
+    // declare variable  
+    int i, len, temp;  
+    len = strlen(str1); // use strlen() to get the length of str string  
+      
+    // use for loop to iterate the string   
+    for (i = 0; i < len/2; i++)  
+    {  
+        // temp variable use to temporary hold the string  
+        temp = str1[i];  
+        str1[i] = str1[len - i - 1];  
+        str1[len - i - 1] = temp;  
+    }  
+}  
+
+// Function to print Excel column name for a given column number
+char *CellGrid_get_grid_pos(int col, int row)
+{
+    char str[MAX]; // To store result (Excel column name)
+    int i = 0; // To store current index in str which is result
+ 
+    while (col > 0) {
+        // Find remainder
+        int rem = col % 26;
+ 
+        // If remainder is 0, then a 'Z' must be there in output
+        if (rem == 0) {
+            str[i++] = 'Z';
+            col = (col / 26) - 1;
+        }
+        else // If remainder is non-zero
+        {
+            str[i++] = (rem - 1) + 'A';
+            col = col / 26;
+        }
+    }
+    str[i] = '\0';
+ 
+    // Reverse the string and print result
+    reverse_str(str);
+    
+    // Add row number
+    char row_str[20];
+    sprintf(row_str, "%d", row);
+    strcat(str, row_str);
+    printf("%s\n", str);
+    
+    return strdup(str);
+}
+
 // only parses the string content
 CellGrid *CellGrid_read_from_csv(const char *file_path, char delim)
 {
@@ -137,13 +189,8 @@ CellGrid *CellGrid_read_from_csv(const char *file_path, char delim)
 			cur_cell = &cg->cells[rows][i];
 			cur_cell->contents = getfield(temp_line, i, delim);
 
-			// TODO: Set cell position on grid (This needs to be changed)
-			char pos[3];
-			pos[0] = COL_LETTERS[i];
-			pos[1] = (rows+1) + '0';
-			pos[2] = '\0';
-
-			cur_cell->grid_pos = strdup(pos);
+			// Set cell position on grid 
+			cur_cell->grid_pos = CellGrid_get_grid_pos(cols, row);
 		}
 		rows++;
 		cg->num_rows = rows;
@@ -257,7 +304,7 @@ Cell_eval CellGrid_eval_cell_expr(Cell *c, CellGrid *cg)
 	type1 = c1->cell_type;
 	type2 = c2->cell_type;
 
-	// TODO: Handle deifferent operators
+	// TODO: Handle different operators
 	// TODO: Handle multiple operands and operators
 
 	// This is bad
@@ -278,12 +325,6 @@ Cell_eval CellGrid_eval_cell_expr(Cell *c, CellGrid *cg)
 		ce.f = c1->cell_eval.f + c2->cell_eval.f;
 		return ce;
 	}
-
-
-	// Maybe should remove this
-	ce.i = 0;
-	ce.f = 0;
-	return ce;
 }
 
 float CellGrid_eval_cell_float(Cell *c)

@@ -41,6 +41,8 @@ void CellGrid_print(CellGrid *cg);
 CellGrid *CellGrid_read_from_csv(const char *file_path, char delim);
 CellGrid *CellGrid_parse_expr(CellGrid *cg);
 CellGrid *CellGrid_parse_numbers(CellGrid *cg);
+#define MAX 100
+char *CellGrid_get_grid_pos(int col, int row);
 
 int CellGrid_eval_cell_int(Cell *c);
 
@@ -62,5 +64,5 @@ Cell *CellGrid_search_by_grid_pos(const char *pos, CellGrid *cg);
 char *getfield(char *line, int num, char delim);
 // get number of columns in a line given a delim
 int get_num_of_fields(char *line, char delim);
-
+void reverse_str(char *str);
 void remove_spaces (char* str_trimmed, const char* str_untrimmed);
