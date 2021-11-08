@@ -41,6 +41,9 @@ void CellGrid_print(CellGrid *cg);
 CellGrid *CellGrid_read_from_csv(const char *file_path, char delim);
 CellGrid *CellGrid_parse_expr(CellGrid *cg);
 CellGrid *CellGrid_parse_numbers(CellGrid *cg);
+// Evaluate the expressions (call after calling *CellGrid_parse_expr(CellGrid *cg))
+CellGrid *CellGrid_eval_cells(CellGrid *cg);
+
 #define MAX 100
 char *CellGrid_get_grid_pos(int col, int row);
 

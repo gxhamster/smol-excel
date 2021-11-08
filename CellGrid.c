@@ -105,7 +105,7 @@ CellGrid *CellGrid_parse_expr(CellGrid *cg)
 		for (j = 0; j < cg->num_cols; j++) {
 			cur_cell = &cg->cells[i][j];
 			if (CellGrid_cell_is_expr(cur_cell)) {
-				cur_cell->cell_eval = CellGrid_eval_cell_expr(cur_cell, cg);
+                cur_cell->cell_type = EXPR;
 			}
 		}
 	}
@@ -160,15 +160,14 @@ char *CellGrid_get_grid_pos(int col, int row)
     char row_str[20];
     sprintf(row_str, "%d", row);
     strcat(str, row_str);
-    printf("%s\n", str);
     
-    return strdup(str);
+    char *result = strdup(str);
+    return result;
 }
 
 // only parses the string content
 CellGrid *CellGrid_read_from_csv(const char *file_path, char delim)
 {
-	char *COL_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	FILE* stream = fopen(file_path, "r");
 	char line[STREAM_BUFFER_MAX];
 	CellGrid *cg = malloc(sizeof(CellGrid));
@@ -190,7 +189,7 @@ CellGrid *CellGrid_read_from_csv(const char *file_path, char delim)
 			cur_cell->contents = getfield(temp_line, i, delim);
 
 			// Set cell position on grid 
-			cur_cell->grid_pos = CellGrid_get_grid_pos(cols, row);
+			cur_cell->grid_pos = CellGrid_get_grid_pos(i+1, rows+1);
 		}
 		rows++;
 		cg->num_rows = rows;
@@ -308,7 +307,10 @@ Cell_eval CellGrid_eval_cell_expr(Cell *c, CellGrid *cg)
 	// TODO: Handle multiple operands and operators
 
 	// This is bad
-	if (type1 == INT && type2 == INT) {
+    if (type1 == EXPR || type2 == EXPR) {
+       fprintf(stderr, "Cannot Handle expressions pointing to expressions yet\n");
+       exit(-1);
+    } else if (type1 == INT && type2 == INT) {
 		c->cell_type = EXPR_INT;
 		ce.i = c1->cell_eval.i + c2->cell_eval.i;
 		return ce;
@@ -327,12 +329,30 @@ Cell_eval CellGrid_eval_cell_expr(Cell *c, CellGrid *cg)
 	}
 }
 
+CellGrid *CellGrid_eval_cells(CellGrid *cg)
+{
+    
+	size_t i;
+	size_t j;
+	Cell *cur_cell;
+
+	for (i = 0; i < cg->num_rows; i++) {
+		for (j = 0; j < cg->num_cols; j++) {
+			cur_cell = &cg->cells[i][j];
+			if (cur_cell->cell_type == EXPR) {
+                cur_cell->cell_eval = CellGrid_eval_cell_expr(cur_cell, cg);
+			}
+		}
+	}
+    return cg;
+}
+
 float CellGrid_eval_cell_float(Cell *c)
 {
-	return atof(c->contents);
+    return atof(c->contents);
 }
 
 int CellGrid_eval_cell_int(Cell *c)
 {
-	return atoi(c->contents);
+    return atoi(c->contents);
 }
