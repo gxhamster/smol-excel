@@ -202,6 +202,10 @@ CellGrid *CellGrid_read_from_csv(const char *file_path, char delim)
 		free(temp_line);
 	}
 	// printf("rows: %d  cols: %d\n", rows, cols);
+	if (cg->num_rows != cg->num_cols) {
+		fprintf(stderr, "ERROR: csv file contains variable columns and rows\n");
+		exit(-1);
+	}
 
 	return cg;
 }
@@ -267,11 +271,19 @@ Cell *CellGrid_search_by_grid_pos(const char *pos, CellGrid *cg)
 		}
 	}
 
-	return NULL;
+	fprintf(stderr, "ERROR: Cannot find the corresponding cell for %s\n", pos);
+	exit(-1);
+
 }
 
 
+float calc(char operator, Cell_eval ce)
+{
+
+}
+
 // Alert: Function only handles addition expr
+// TODO: Handle multiple types of operators +-*/
 Cell_eval CellGrid_eval_cell_expr1(Cell *c, CellGrid *cg)
 {
 
@@ -287,7 +299,6 @@ Cell_eval CellGrid_eval_cell_expr1(Cell *c, CellGrid *cg)
 
 	while ( (found = strsep(&temp, "+-*/")) != NULL) {
 		stack_push(operands, (void *)found);
-		// printf("found: %s\n", found);
 	}
 
 
@@ -305,7 +316,6 @@ Cell_eval CellGrid_eval_cell_expr1(Cell *c, CellGrid *cg)
 
 	for (i = 0; (size_t)i < len; i++) {
 		Cell *c = CellGrid_search_by_grid_pos((char *)stack_pop(operands), cg);
-		// Also set the cell type
 		switch (c->cell_type) {
 			case INT:
 				res += c->cell_eval.i;
