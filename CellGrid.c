@@ -282,8 +282,6 @@ Cell_eval CellGrid_eval_cell_expr1(Cell *c, CellGrid *cg)
 	char *src_str = c->contents;
 	char *temp = strdup(src_str);
 
-
-
 	Stack *operands = create_stack();
 	Stack *operators = create_stack();
 
@@ -345,70 +343,6 @@ Cell_eval CellGrid_eval_cell_expr1(Cell *c, CellGrid *cg)
 	return ce;
 }
 
-
-/*
- * Simplitciy can only handle two operands
- */
-Cell_eval CellGrid_eval_cell_expr(Cell *c, CellGrid *cg)
-{
-	char *trimmed = malloc(strlen(c->contents) + 1);
-	remove_spaces(trimmed, c->contents);
-
-	// Get the grid positions from the expr
-	// This is not good (fix: use a better method)
-	char operand1[3], operand2[3];
-	char *begin = trimmed;
-	char *operator = strchr(trimmed, '+');
-	char *temp = operand1;
-	while(begin != operator) {
-		*temp = *begin;
-		begin++;
-		temp++;
-	}
-	*temp = '\0';
-
-
-	temp = operand2;
-	char *operand2_start = operator+1;
-	strcpy(operand2, operand2_start);
-
-	// A1+B1+C3
-
-	// Get corresponding cells for the grid pos
-	Cell *c1 = CellGrid_search_by_grid_pos(operand1, cg);
-	Cell *c2 = CellGrid_search_by_grid_pos(operand2, cg);
-	Cell_eval ce;
-
-	enum CellTypes type1;
-	enum CellTypes type2;
-	type1 = c1->cell_type;
-	type2 = c2->cell_type;
-
-	// TODO: Handle different operators
-	// TODO: Handle multiple operands and operators
-
-	// This is bad
-	if (type1 == EXPR || type2 == EXPR) {
-		fprintf(stderr, "Cannot Handle expressions pointing to expressions yet\n");
-		exit(-1);
-	} else if (type1 == INT && type2 == INT) {
-		c->cell_type = EXPR_INT;
-		ce.i = c1->cell_eval.i + c2->cell_eval.i;
-		return ce;
-	} else if (type1 == FLOAT && type2 == INT) {
-		c->cell_type = EXPR_FLOAT;
-		ce.f = c1->cell_eval.f + c2->cell_eval.i;
-		return ce;
-	} else if (type1 == INT && type2 == FLOAT) {
-		c->cell_type = EXPR_FLOAT;
-		ce.f = c1->cell_eval.i + c2->cell_eval.f;
-		return ce;
-	} else {
-		c->cell_type = EXPR_FLOAT;
-		ce.f = c1->cell_eval.f + c2->cell_eval.f;
-		return ce;
-	}
-}
 
 CellGrid *CellGrid_eval_cells(CellGrid *cg)
 {
