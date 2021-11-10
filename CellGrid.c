@@ -294,8 +294,7 @@ Cell_eval CellGrid_eval_cell_expr1(Cell *c, CellGrid *cg)
 
 
 	int i;
-	int j;
-	for (i = 0; i < strlen(src_str); i++) {
+	for (i = 0; (size_t)i < strlen(src_str); i++) {
 		if (is_operator(src_str[i])) {
 			stack_push(operators, (void *)&src_str[i]);
 		}
@@ -306,7 +305,7 @@ Cell_eval CellGrid_eval_cell_expr1(Cell *c, CellGrid *cg)
 	int num_of_floats;
 	int num_of_ints;
 
-	for (i = 0, j = 0; i < len; i++) {
+	for (i = 0; (size_t)i < len; i++) {
 		Cell *c = CellGrid_search_by_grid_pos((char *)stack_pop(operands), cg);
 		// Also set the cell type
 		switch (c->cell_type) {
@@ -326,6 +325,9 @@ Cell_eval CellGrid_eval_cell_expr1(Cell *c, CellGrid *cg)
 				res += c->cell_eval.i;
 				num_of_ints++;
 				break;
+			default:
+				fprintf(stderr, "ERROR: Cannot evaluate this cell");
+				break;
 		}
 	}
 
@@ -333,11 +335,13 @@ Cell_eval CellGrid_eval_cell_expr1(Cell *c, CellGrid *cg)
 	free(temp);
 
 	Cell_eval ce;
-	if (num_of_floats == 0)
+	if (num_of_floats == 0) {
+		c->cell_type = EXPR_INT;
 		ce.i = res;
-	else
+	} else {
+		c->cell_type = EXPR_FLOAT;
 		ce.f = res;
-
+	}
 	return ce;
 }
 
@@ -417,7 +421,7 @@ CellGrid *CellGrid_eval_cells(CellGrid *cg)
 		for (j = 0; j < cg->num_cols; j++) {
 			cur_cell = &cg->cells[i][j];
 			if (cur_cell->cell_type == EXPR) {
-				cur_cell->cell_eval = CellGrid_eval_cell_expr(cur_cell, cg);
+				cur_cell->cell_eval = CellGrid_eval_cell_expr1(cur_cell, cg);
 			}
 		}
 	}

@@ -11,20 +11,16 @@ int main(void)
     cg = CellGrid_parse_numbers(cg);
     cg = CellGrid_parse_expr(cg);
     cg = CellGrid_eval_cells(cg);
-    //CellGrid_print(cg);
+    CellGrid_print(cg);
 
     /*
        1,2,5.23
        3,C1+B1,2.0
        10,2,A1+B1
        */
-    CellGrid_eval_cell_expr1(&cg->cells[1][1], cg);
 
-    //Stack *s = create_stack();
-    //int a = 5;
-    //void *p = &a;
-    //stack_push(s, p);
-    //int r = *(int *)stack_pop(s);
+    // C1+B2
+    // CellGrid_eval_cell_expr1(&cg->cells[1][1], cg);
 
     return 0;
 }
