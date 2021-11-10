@@ -3,7 +3,9 @@
 #include <string.h>
 #include <stdbool.h>
 #include <ctype.h>
+
 #include "CellGrid.h"
+#include "Stack.h"
 
 void CellGrid_print(CellGrid *cg)
 {
@@ -181,6 +183,10 @@ CellGrid *CellGrid_read_from_csv(const char *file_path, char delim)
 	while(fgets(line, STREAM_BUFFER_MAX, stream) != NULL) {
 		char *temp_line = strdup(line);
 		cols = get_num_of_fields(temp_line, delim);
+		if (cols > GRID_MAX) {
+			fprintf(stderr, "ERROR: Number of columns is greater than maximum allowed");
+			exit(-1);
+		}
 		cg->num_cols = cols;
 		size_t i;
 		Cell *cur_cell;
@@ -265,6 +271,77 @@ Cell *CellGrid_search_by_grid_pos(const char *pos, CellGrid *cg)
 }
 
 
+// Alert: Function only handles addition expr
+Cell_eval CellGrid_eval_cell_expr1(Cell *c, CellGrid *cg)
+{
+
+	// A1+B2-C2
+	// 1: A1 B2 C2
+	// 2: + -
+	char *found;
+	char *src_str = c->contents;
+	char *temp = strdup(src_str);
+
+
+
+	Stack *operands = create_stack();
+	Stack *operators = create_stack();
+
+	while ( (found = strsep(&temp, "+-*/")) != NULL) {
+		stack_push(operands, (void *)found);
+		// printf("found: %s\n", found);
+	}
+
+
+	int i;
+	int j;
+	for (i = 0; i < strlen(src_str); i++) {
+		if (is_operator(src_str[i])) {
+			stack_push(operators, (void *)&src_str[i]);
+		}
+	}
+
+	float res;
+	size_t len = operands->size;
+	int num_of_floats;
+	int num_of_ints;
+
+	for (i = 0, j = 0; i < len; i++) {
+		Cell *c = CellGrid_search_by_grid_pos((char *)stack_pop(operands), cg);
+		// Also set the cell type
+		switch (c->cell_type) {
+			case INT:
+				res += c->cell_eval.i;
+				num_of_ints++;
+				break;
+			case FLOAT:
+				res += c->cell_eval.f;
+				num_of_floats++;
+				break;
+			case EXPR_FLOAT:
+				res += c->cell_eval.f;
+				num_of_floats++;
+				break;
+			case EXPR_INT:
+				res += c->cell_eval.i;
+				num_of_ints++;
+				break;
+		}
+	}
+
+	printf("result: %f\n" , res);
+	free(temp);
+
+	Cell_eval ce;
+	if (num_of_floats == 0)
+		ce.i = res;
+	else
+		ce.f = res;
+
+	return ce;
+}
+
+
 /*
  * Simplitciy can only handle two operands
  */
@@ -291,7 +368,7 @@ Cell_eval CellGrid_eval_cell_expr(Cell *c, CellGrid *cg)
 	char *operand2_start = operator+1;
 	strcpy(operand2, operand2_start);
 
-	// printf("1: %s 2: %s\n", operand1, operand2);
+	// A1+B1+C3
 
 	// Get corresponding cells for the grid pos
 	Cell *c1 = CellGrid_search_by_grid_pos(operand1, cg);
@@ -307,10 +384,10 @@ Cell_eval CellGrid_eval_cell_expr(Cell *c, CellGrid *cg)
 	// TODO: Handle multiple operands and operators
 
 	// This is bad
-    if (type1 == EXPR || type2 == EXPR) {
-       fprintf(stderr, "Cannot Handle expressions pointing to expressions yet\n");
-       exit(-1);
-    } else if (type1 == INT && type2 == INT) {
+	if (type1 == EXPR || type2 == EXPR) {
+		fprintf(stderr, "Cannot Handle expressions pointing to expressions yet\n");
+		exit(-1);
+	} else if (type1 == INT && type2 == INT) {
 		c->cell_type = EXPR_INT;
 		ce.i = c1->cell_eval.i + c2->cell_eval.i;
 		return ce;
@@ -331,7 +408,7 @@ Cell_eval CellGrid_eval_cell_expr(Cell *c, CellGrid *cg)
 
 CellGrid *CellGrid_eval_cells(CellGrid *cg)
 {
-    
+
 	size_t i;
 	size_t j;
 	Cell *cur_cell;
@@ -340,19 +417,32 @@ CellGrid *CellGrid_eval_cells(CellGrid *cg)
 		for (j = 0; j < cg->num_cols; j++) {
 			cur_cell = &cg->cells[i][j];
 			if (cur_cell->cell_type == EXPR) {
-                cur_cell->cell_eval = CellGrid_eval_cell_expr(cur_cell, cg);
+				cur_cell->cell_eval = CellGrid_eval_cell_expr(cur_cell, cg);
 			}
 		}
 	}
-    return cg;
+	return cg;
+}
+
+bool is_operator(char c)
+{
+	switch(c) {
+		case '+':
+		case '-':
+		case '*':
+		case '/':
+			return true;
+		default:
+			return false;
+	}
 }
 
 float CellGrid_eval_cell_float(Cell *c)
 {
-    return atof(c->contents);
+	return atof(c->contents);
 }
 
 int CellGrid_eval_cell_int(Cell *c)
 {
-    return atoi(c->contents);
+	return atoi(c->contents);
 }

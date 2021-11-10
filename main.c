@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "CellGrid.h"
+#include "Stack.h"
 
 int main(void)
 {
@@ -9,15 +11,20 @@ int main(void)
     cg = CellGrid_parse_numbers(cg);
     cg = CellGrid_parse_expr(cg);
     cg = CellGrid_eval_cells(cg);
-    CellGrid_print(cg);
+    //CellGrid_print(cg);
 
     /*
        1,2,5.23
        3,C1+B1,2.0
        10,2,A1+B1
        */
-    Cell c = cg->cells[1][1];
-    printf("yes: %d\n", CellGrid_cell_is_expr(&c));
+    CellGrid_eval_cell_expr1(&cg->cells[1][1], cg);
+
+    //Stack *s = create_stack();
+    //int a = 5;
+    //void *p = &a;
+    //stack_push(s, p);
+    //int r = *(int *)stack_pop(s);
 
     return 0;
 }

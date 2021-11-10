@@ -1,5 +1,12 @@
+#ifndef CELL_GRID_H
+#define CELL_GRID_H
+
 #include <stdbool.h>
 
+/*
+ * When A1 + B2 is eval it could either be a float or an integer
+ * This union will hold the eval value
+ */
 typedef union {
 	int i;
 	float f;
@@ -16,6 +23,12 @@ enum CellTypes {
 
 
 typedef struct {
+	char *operand1;
+	char *operand2;
+	char operator;
+} Expr;
+
+typedef struct {
 	char *contents;
 	enum CellTypes cell_type;
 	// A1, B2
@@ -30,10 +43,6 @@ typedef struct {
 	size_t num_cols;
 } CellGrid;
 
-/*
- * When A1 + B2 is eval it could either be a float or an integer
- * This union will hold the eval value
- */
 
 
 void CellGrid_print(CellGrid *cg);
@@ -53,6 +62,9 @@ float CellGrid_eval_cell_float(Cell *c);
 
 Cell_eval CellGrid_eval_cell_expr(Cell *c, CellGrid *cg);
 
+Cell_eval CellGrid_eval_cell_expr1(Cell *c, CellGrid *cg);
+
+
 bool CellGrid_cell_is_expr(Cell *c);
 
 bool CellGrid_cell_is_float(Cell *c);
@@ -69,3 +81,6 @@ char *getfield(char *line, int num, char delim);
 int get_num_of_fields(char *line, char delim);
 void reverse_str(char *str);
 void remove_spaces (char* str_trimmed, const char* str_untrimmed);
+bool is_operator(char c);
+
+#endif

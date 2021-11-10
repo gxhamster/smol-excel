@@ -1,4 +1,4 @@
-SOURCES=CellGrid.c main.c
+SOURCES=CellGrid.c main.c Stack.c
 CFLAGS=-Wall -Wextra -g
 OUT=excel
 
